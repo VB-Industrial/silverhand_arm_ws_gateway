@@ -13,7 +13,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from rclpy.client import Client
 from rclpy.node import Node
-from sensor_msgs.msg import BatteryState
+from sensor_msgs.msg import BatteryState, Imu
 from std_srvs.srv import SetBool
 
 from ...core.adapter_base import EventSink, RobotAdapter
@@ -26,7 +26,7 @@ LOGGER = logging.getLogger("silverhand_ws_gateway.rover.ros")
 
 
 class RoverRosAdapter(RobotAdapter):
-    server_name = "silverhand_rover_ws_gateway"
+    server_name = "silverhand_ws_gateway_rover"
     groups = (GROUP_ROVER,)
 
     def __init__(self, config: GatewayConfig) -> None:
@@ -48,6 +48,8 @@ class RoverRosAdapter(RobotAdapter):
         self._last_command_monotonic = time.monotonic()
         self._odometer_km = 0.0
         self._last_xy: tuple[float, float] | None = None
+        self._roll_deg = 0.0
+        self._pitch_deg = 0.0
 
     async def start(self, event_sink: EventSink) -> None:
         self._event_sink = event_sink
@@ -57,9 +59,10 @@ class RoverRosAdapter(RobotAdapter):
             rclpy.init(args=None)
             self._rclpy_owned = True
 
-        self._node = rclpy.create_node("silverhand_rover_ws_gateway")
+        self._node = rclpy.create_node("silverhand_ws_gateway_rover")
         self._cmd_vel_publisher = self._node.create_publisher(Twist, self._config.rover_cmd_vel_topic, 10)
         self._node.create_subscription(Odometry, self._config.rover_odom_topic, self._on_odometry, 10)
+        self._node.create_subscription(Imu, self._config.rover_imu_topic, self._on_imu, 10)
         self._node.create_subscription(BatteryState, self._config.rover_battery_topic, self._on_battery_state, 10)
         self._headlights_client = self._node.create_client(SetBool, self._config.rover_headlights_service)
 
@@ -235,9 +238,21 @@ class RoverRosAdapter(RobotAdapter):
                     "odometer_km": self._odometer_km,
                     "x_m": x_m,
                     "y_m": y_m,
+                    "roll_deg": self._roll_deg,
+                    "pitch_deg": self._pitch_deg,
                 },
             )
         )
+
+    def _on_imu(self, message: Imu) -> None:
+        roll_deg, pitch_deg, _ = _euler_from_quaternion_deg(
+            message.orientation.x,
+            message.orientation.y,
+            message.orientation.z,
+            message.orientation.w,
+        )
+        self._roll_deg = roll_deg
+        self._pitch_deg = pitch_deg
 
     def _on_battery_state(self, message: BatteryState) -> None:
         percent = float(message.percentage * 100.0) if math.isfinite(message.percentage) and message.percentage >= 0.0 else 0.0
@@ -308,13 +323,28 @@ class RoverRosAdapter(RobotAdapter):
 
 
 def _yaw_from_quaternion_deg(x: float, y: float, z: float, w: float) -> float:
+    _, _, yaw_deg = _euler_from_quaternion_deg(x, y, z, w)
+    return yaw_deg
+
+
+def _euler_from_quaternion_deg(x: float, y: float, z: float, w: float) -> tuple[float, float, float]:
+    sinr_cosp = 2.0 * (w * x + y * z)
+    cosr_cosp = 1.0 - 2.0 * (x * x + y * y)
+    roll_rad = math.atan2(sinr_cosp, cosr_cosp)
+
+    sinp = 2.0 * (w * y - z * x)
+    if abs(sinp) >= 1.0:
+        pitch_rad = math.copysign(math.pi / 2.0, sinp)
+    else:
+        pitch_rad = math.asin(sinp)
+
     siny_cosp = 2.0 * (w * z + x * y)
     cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
     yaw_rad = math.atan2(siny_cosp, cosy_cosp)
     heading_deg = math.degrees(yaw_rad) % 360.0
     if heading_deg < 0.0:
         heading_deg += 360.0
-    return heading_deg
+    return math.degrees(roll_rad), math.degrees(pitch_rad), heading_deg
 
 
 def _log_threadsafe_future(future: "concurrent.futures.Future[Any]") -> None:

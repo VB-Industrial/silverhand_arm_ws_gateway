@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 
-package_name = "silverhand_arm_ws_gateway"
+package_name = "silverhand_ws_gateway"
 
 
 setup(
@@ -10,14 +10,23 @@ setup(
     packages=find_packages(exclude=["test"]),
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
-        (f"share/{package_name}", ["package.xml", "README.md"]),
+        (f"share/{package_name}", ["package.xml", "README.md", "package.dsv"]),
         (
             f"share/{package_name}/launch",
             [
-                "launch/mock_gateway.launch.py",
-                "launch/rover_gateway.launch.py",
-                "launch/ros_gateway.launch.py",
-                "launch/moveit_gateway.launch.py",
+                "launch/arm_mock.launch.py",
+                "launch/arm_ros.launch.py",
+                "launch/arm_moveit.launch.py",
+                "launch/rover_mock.launch.py",
+                "launch/rover_ros.launch.py",
+            ],
+        ),
+        (
+            f"share/{package_name}/hook",
+            [
+                "hook/ament_prefix_path.dsv",
+                "hook/ament_prefix_path.ps1",
+                "hook/ament_prefix_path.sh",
             ],
         ),
     ],
@@ -29,7 +38,7 @@ setup(
     license="Apache-2.0",
     entry_points={
         "console_scripts": [
-            "gateway = silverhand_arm_ws_gateway.main:main",
+            "gateway = silverhand_ws_gateway.main:main",
         ],
     },
 )

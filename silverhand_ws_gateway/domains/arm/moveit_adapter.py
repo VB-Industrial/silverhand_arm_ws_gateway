@@ -29,7 +29,7 @@ from .protocol import (
 from .state_cache import ARM_JOINT_NAMES, GRIPPER_JOINT_NAMES
 
 
-LOGGER = logging.getLogger("silverhand_arm_ws_gateway.moveit")
+LOGGER = logging.getLogger("silverhand_ws_gateway.arm.moveit")
 
 ROS_ARM_JOINT_NAMES = (
     "joint_1",
@@ -55,7 +55,7 @@ JOINT_STATE_TOPIC = "/joint_states"
 
 
 class MoveItRobotAdapter(RobotAdapter):
-    server_name = "silverhand_arm_ws_gateway"
+    server_name = "silverhand_ws_gateway_arm"
     groups = (GROUP_ARM, GROUP_GRIPPER)
 
     def __init__(self, config: GatewayConfig) -> None:
@@ -88,7 +88,7 @@ class MoveItRobotAdapter(RobotAdapter):
             rclpy.init(args=None)
             self._rclpy_owned = True
 
-        self._node = rclpy.create_node("silverhand_arm_ws_gateway_moveit")
+        self._node = rclpy.create_node("silverhand_ws_gateway_arm_moveit")
         self._node.create_subscription(JointState, JOINT_STATE_TOPIC, self._on_joint_state, 10)
         self._action_client = ActionClient(self._node, MoveGroup, self._config.move_group_action_name)
 

@@ -18,7 +18,7 @@ from .protocol import (
 from .state_cache import GatewayStateCache, GroupJointState
 
 
-LOGGER = logging.getLogger("silverhand_arm_ws_gateway.mock")
+LOGGER = logging.getLogger("silverhand_ws_gateway.arm.mock")
 
 
 def clamp(value: float, low: float, high: float) -> float:
@@ -40,7 +40,7 @@ def quaternion_to_xyz_euler(x: float, y: float, z: float, w: float) -> tuple[flo
 
 
 class MockRobotAdapter(RobotAdapter):
-    server_name = "silverhand_arm_ws_gateway"
+    server_name = "silverhand_ws_gateway_arm"
     groups = (GROUP_ARM, GROUP_GRIPPER)
 
     def __init__(self, config: GatewayConfig) -> None:

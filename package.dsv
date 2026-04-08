@@ -1,0 +1,6 @@
+source;share/silverhand_ws_gateway/hook/ament_prefix_path.ps1
+source;share/silverhand_ws_gateway/hook/ament_prefix_path.dsv
+source;share/silverhand_ws_gateway/hook/ament_prefix_path.sh
+source;share/silverhand_ws_gateway/hook/pythonpath.ps1
+source;share/silverhand_ws_gateway/hook/pythonpath.dsv
+source;share/silverhand_ws_gateway/hook/pythonpath.sh

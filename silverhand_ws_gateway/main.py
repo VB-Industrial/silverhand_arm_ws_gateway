@@ -22,6 +22,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mock-max-joint-velocity", type=float, default=1.2)
     parser.add_argument("--rover-cmd-vel-topic", default="/rover_base_controller/cmd_vel_unstamped")
     parser.add_argument("--rover-odom-topic", default="/rover_base_controller/odom")
+    parser.add_argument("--rover-imu-topic", default="/imu_sensor_broadcaster/imu")
     parser.add_argument("--rover-battery-topic", default="/battery_state")
     parser.add_argument("--rover-headlights-service", default="/power_board/set_headlights")
     parser.add_argument("--log-level", default="INFO")
@@ -44,6 +45,7 @@ def main() -> None:
         mock_max_joint_velocity_rad_s=args.mock_max_joint_velocity,
         rover_cmd_vel_topic=args.rover_cmd_vel_topic,
         rover_odom_topic=args.rover_odom_topic,
+        rover_imu_topic=args.rover_imu_topic,
         rover_battery_topic=args.rover_battery_topic,
         rover_headlights_service=args.rover_headlights_service,
     )

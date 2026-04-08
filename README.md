@@ -1,18 +1,8 @@
 # silverhand_ws_gateway
 
-Robot-side websocket gateway for SilverHand robot domains.
+Robot-side websocket gateway for SilverHand domains.
 
-Важно:
-- репозиторий уже общий: `silverhand_ws_gateway`
-- ROS package name пока сохранён как `silverhand_arm_ws_gateway` для совместимости во время миграции
-- внутри пакета уже есть два домена: `arm` и `rover`
-
-Назначение:
-- принимает команды от GUI по websocket
-- переводит их в robot-side backend
-- возвращает доменные state-сообщения обратно в GUI
-
-Поддерживаемые backend-режимы:
+Поддерживаемые режимы:
 
 - `arm/mock`
 - `arm/ros`
@@ -27,204 +17,98 @@ sudo apt-get update
 sudo apt-get install -y python3-websockets
 ```
 
-Для `ros`/`moveit`-режимов также нужен рабочий ROS 2 Jazzy workspace.
+Для `ros` и `moveit` режимов нужен рабочий ROS 2 Jazzy workspace.
 
 ## Сборка
 
 ```bash
 cd /home/r/silver_ws
 source /opt/ros/jazzy/setup.bash
-colcon build --packages-select silverhand_arm_ws_gateway
+colcon build --packages-select silverhand_ws_gateway
 source install/setup.bash
 ```
 
-## Режимы запуска
-
-### 1. Arm mock
+## Основные скрипты запуска
 
 ```bash
-ros2 run silverhand_arm_ws_gateway gateway --domain arm --mode mock --host 0.0.0.0 --port 8765
+cd /home/r/silver_ws/src/silverhand_ws_gateway
+./scripts/start_arm_mock.sh
+./scripts/start_arm_ros.sh
+./scripts/start_arm_moveit.sh
+./scripts/start_rover_mock.sh
+./scripts/start_rover_ros.sh
 ```
 
-или:
+Порты по умолчанию:
+
+- arm: `8765`
+- rover: `8766`
+
+Полезные переменные окружения:
+
+- `SILVERHAND_WS_HOST`
+- `SILVERHAND_WS_PORT`
+- `SILVERHAND_WS_LOG_LEVEL`
+- `SILVERHAND_MOVE_GROUP_ACTION`
+- `SILVERHAND_ROVER_CMD_VEL_TOPIC`
+- `SILVERHAND_ROVER_ODOM_TOPIC`
+- `SILVERHAND_ROVER_BATTERY_TOPIC`
+- `SILVERHAND_ROVER_HEADLIGHTS_SERVICE`
+
+## Launch-файлы
+
+- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_mock.launch.py`
+- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_ros.launch.py`
+- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_moveit.launch.py`
+- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/rover_mock.launch.py`
+- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/rover_ros.launch.py`
+
+Если нужен запуск именно через `ros2 launch`, сначала добавьте локальный prefix gateway в окружение:
 
 ```bash
-ros2 launch silverhand_arm_ws_gateway mock_gateway.launch.py
+source /opt/ros/jazzy/setup.bash
+source /home/r/silver_ws/install/setup.bash
+export AMENT_PREFIX_PATH=/home/r/silver_ws/install/silverhand_ws_gateway:$AMENT_PREFIX_PATH
 ```
 
-Helper:
+## Smoke test
+
+Arm mock:
 
 ```bash
-cd /home/r/silver_ws/src/silverhand_arm_ws_gateway
-./scripts/start_gateway_mock.sh
-./scripts/run_mock_gateway.sh
-```
-
-Smoke test:
-
-```bash
-cd /home/r/silver_ws/src/silverhand_arm_ws_gateway
+cd /home/r/silver_ws/src/silverhand_ws_gateway
 python3 scripts/mock_smoke_test.py --domain arm --url ws://127.0.0.1:8765
 ```
 
-### 2. Arm ros2_control
-
-Этот режим шлёт arm-команды напрямую в:
-
-- `/arm_controller/follow_joint_trajectory`
-
-Запуск:
+Rover mock:
 
 ```bash
-ros2 run silverhand_arm_ws_gateway gateway --domain arm --mode ros --host 0.0.0.0 --port 8765
+cd /home/r/silver_ws/src/silverhand_ws_gateway
+python3 scripts/mock_smoke_test.py --domain rover --url ws://127.0.0.1:8766
 ```
 
-или:
-
-```bash
-ros2 launch silverhand_arm_ws_gateway ros_gateway.launch.py
-```
-
-Helper:
-
-```bash
-cd /home/r/silver_ws/src/silverhand_arm_ws_gateway
-./scripts/start_gateway_ros.sh
-```
-
-### 3. Arm MoveIt
-
-Этот режим шлёт arm/gripper команды в:
-
-- `MoveGroup` action, по умолчанию `/move_action`
-
-Запуск:
-
-```bash
-ros2 run silverhand_arm_ws_gateway gateway --domain arm --mode moveit --host 0.0.0.0 --port 8765 --move-group-action /move_action
-```
-
-или:
-
-```bash
-ros2 launch silverhand_arm_ws_gateway moveit_gateway.launch.py
-```
-
-Helper:
-
-```bash
-cd /home/r/silver_ws/src/silverhand_arm_ws_gateway
-./scripts/start_gateway_moveit.sh
-```
-
-### 4. Rover
-
-ROS bringup:
-
-```bash
-ros2 run silverhand_arm_ws_gateway gateway \
-  --domain rover \
-  --mode ros \
-  --host 0.0.0.0 \
-  --port 8766 \
-  --rover-cmd-vel-topic /rover_base_controller/cmd_vel_unstamped \
-  --rover-odom-topic /rover_base_controller/odom \
-  --rover-battery-topic /battery_state \
-  --rover-headlights-service /power_board/set_headlights
-```
-
-Mock bringup:
-
-```bash
-ros2 run silverhand_arm_ws_gateway gateway --domain rover --mode mock --host 0.0.0.0 --port 8766
-```
-
-Launch:
-
-```bash
-ros2 launch silverhand_arm_ws_gateway rover_gateway.launch.py
-```
-
-Helper:
-
-```bash
-cd /home/r/silver_ws/src/silverhand_arm_ws_gateway
-SILVERHAND_WS_MODE=ros ./scripts/start_gateway_rover.sh
-SILVERHAND_WS_MODE=mock ./scripts/start_gateway_rover.sh
-```
-
-## Что поддерживается сейчас
-
-### Общие сообщения
-
-- `hello`
-- `hello_ack`
-- `ping`
-- `pong`
-- `fault_state`
-
-### Arm / gripper goal path
-
-- `set_joint_goal`
-- `plan`
-- `execute`
-- `stop`
-- `estop`
-- `reset_estop`
-
-### Состояние
-
-- `joint_state`
-- `planning_state`
-- `execution_state`
-
-## Важные замечания по режимам
-
-### Mock
-
-- хорош для сети и GUI smoke test
-- не проверяет реальную коллизионную валидность `MoveIt`
-
-### Ros
-
-- arm идёт напрямую через `joint_trajectory_controller`
-- `set_pose_goal` пока не маппится, используйте `set_joint_goal`
-
-### MoveIt
-
-- arm и gripper идут через `MoveGroup`
-- основная рабочая команда для GUI сейчас тоже `set_joint_goal`
-- `set_pose_goal` пока не маппится в `moveit_adapter`
-- в логах gateway теперь видно:
-  - отправку goal
-  - accepted/rejected
-  - result status
-  - `error_code`
-  - `message`
-
-## Типовой сценарий arm + hand + MoveIt
+## Типовой запуск arm + MoveIt
 
 На robot machine:
 
-1. Поднять `silverhand_system_bringup`:
-
 ```bash
-cd ~/silver_ws
+cd /home/r/silver_ws
 source /opt/ros/jazzy/setup.bash
-source ~/silver_ws/install/setup.bash
+source install/setup.bash
 ros2 launch silverhand_system_bringup silverhand_system_arm_hand_moveit.launch.py use_mock_hardware:=true use_rviz:=false
 ```
 
-2. Поднять gateway:
+Во втором терминале:
 
 ```bash
-cd ~/silver_ws
+cd /home/r/silver_ws
 source /opt/ros/jazzy/setup.bash
-source ~/silver_ws/install/setup.bash
-ros2 launch silverhand_arm_ws_gateway moveit_gateway.launch.py
+source install/setup.bash
+export AMENT_PREFIX_PATH=/home/r/silver_ws/install/silverhand_ws_gateway:$AMENT_PREFIX_PATH
+ros2 launch /home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_moveit.launch.py
 ```
 
-3. В GUI подключиться к:
+GUI:
 
 ```text
 ws://<robot-ip>:8765
@@ -232,10 +116,10 @@ ws://<robot-ip>:8765
 
 ## Полезные проверки
 
-Порт gateway:
+Порты:
 
 ```bash
-ss -ltnp | grep 8765
+ss -ltnp | grep -E '8765|8766'
 ```
 
 Контроллеры:
@@ -250,57 +134,34 @@ MoveIt action:
 ros2 action list | grep move_action
 ```
 
-## Логи
-
-Если запускаешь вручную через `nohup`, удобно писать в:
-
-- `~/silver_ws/run_logs/ws_gateway_moveit.log`
-- `~/silver_ws/run_logs/ws_gateway_ros.log`
-
-Именно по `ws_gateway` логам сейчас лучше всего видно:
-
-- дошёл ли goal
-- accepted/rejected
-- чем закончился `MoveIt` request
-
 ## systemd
 
-В пакете есть user-service template:
+Шаблон юнита:
 
 - `systemd/user/silverhand-ws-gateway@.service`
-
-Экземпляры:
-
-- `mock`
-- `ros`
-- `moveit`
 
 Установка:
 
 ```bash
 mkdir -p ~/.config/systemd/user
-cp /home/r/silver_ws/src/silverhand_arm_ws_gateway/systemd/user/silverhand-ws-gateway@.service ~/.config/systemd/user/
+cp /home/r/silver_ws/src/silverhand_ws_gateway/systemd/user/silverhand-ws-gateway@.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 ```
 
-Запуск:
+Инстансы:
 
 ```bash
-systemctl --user enable --now silverhand-ws-gateway@mock.service
-systemctl --user enable --now silverhand-ws-gateway@ros.service
-systemctl --user enable --now silverhand-ws-gateway@moveit.service
+systemctl --user enable --now silverhand-ws-gateway@arm_mock.service
+systemctl --user enable --now silverhand-ws-gateway@arm_ros.service
+systemctl --user enable --now silverhand-ws-gateway@arm_moveit.service
+systemctl --user enable --now silverhand-ws-gateway@rover_mock.service
+systemctl --user enable --now silverhand-ws-gateway@rover_ros.service
 ```
 
-Автозапуск без логина:
+Логи и статус:
 
 ```bash
-loginctl enable-linger "$USER"
-```
-
-Полезные команды:
-
-```bash
-systemctl --user status silverhand-ws-gateway@moveit.service
-journalctl --user -u silverhand-ws-gateway@moveit.service -f
-systemctl --user restart silverhand-ws-gateway@moveit.service
+systemctl --user status silverhand-ws-gateway@arm_moveit.service
+journalctl --user -u silverhand-ws-gateway@arm_moveit.service -f
+systemctl --user restart silverhand-ws-gateway@arm_moveit.service
 ```

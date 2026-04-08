@@ -28,7 +28,7 @@ from .protocol import (
 )
 
 
-LOGGER = logging.getLogger("silverhand_arm_ws_gateway.ros")
+LOGGER = logging.getLogger("silverhand_ws_gateway.arm.ros")
 
 ROS_ARM_JOINT_NAMES = (
     "joint_1",
@@ -56,7 +56,7 @@ JOINT_STATE_TOPIC = "/joint_states"
 
 
 class RosRobotAdapter(RobotAdapter):
-    server_name = "silverhand_arm_ws_gateway"
+    server_name = "silverhand_ws_gateway_arm"
     groups = (GROUP_ARM, GROUP_GRIPPER)
 
     def __init__(self, config: GatewayConfig) -> None:
@@ -83,7 +83,7 @@ class RosRobotAdapter(RobotAdapter):
             rclpy.init(args=None)
             self._rclpy_owned = True
 
-        self._node = rclpy.create_node("silverhand_arm_ws_gateway")
+        self._node = rclpy.create_node("silverhand_ws_gateway_arm")
         self._node.create_subscription(JointState, JOINT_STATE_TOPIC, self._on_joint_state, 10)
         self._action_client = ActionClient(self._node, FollowJointTrajectory, ARM_ACTION_NAME)
 

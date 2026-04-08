@@ -31,6 +31,8 @@ class RoverMockState:
     heading_deg: float = 0.0
     x_m: float = 0.0
     y_m: float = 0.0
+    roll_deg: float = 0.0
+    pitch_deg: float = 0.0
     odometer_km: float = 0.0
     battery_percent: float = 86.0
     battery_voltage_v: float = 25.2
@@ -39,7 +41,7 @@ class RoverMockState:
 
 
 class MockRoverAdapter(RobotAdapter):
-    server_name = "silverhand_rover_ws_gateway"
+    server_name = "silverhand_ws_gateway_rover"
     groups = (GROUP_ROVER,)
 
     def __init__(self, config: GatewayConfig) -> None:
@@ -160,6 +162,8 @@ class MockRoverAdapter(RobotAdapter):
         heading_rad = math.radians(self._state.heading_deg)
         self._state.x_m += math.sin(heading_rad) * self._state.linear_m_s * dt
         self._state.y_m += math.cos(heading_rad) * self._state.linear_m_s * dt
+        self._state.roll_deg = max(-25.0, min(25.0, math.sin(time.monotonic() / 0.9) * 7.0 + self._state.angular_rad_s * 9.0))
+        self._state.pitch_deg = max(-20.0, min(20.0, math.sin(time.monotonic() / 1.3) * 4.0 + self._state.linear_m_s * 3.5))
         self._state.odometer_km += abs(self._state.linear_m_s) * dt / 1000.0
 
         battery_drain = abs(self._state.linear_m_s) * dt * 0.018
@@ -182,6 +186,8 @@ class MockRoverAdapter(RobotAdapter):
                     "odometer_km": self._state.odometer_km,
                     "x_m": self._state.x_m,
                     "y_m": self._state.y_m,
+                    "roll_deg": self._state.roll_deg,
+                    "pitch_deg": self._state.pitch_deg,
                 },
             )
         )

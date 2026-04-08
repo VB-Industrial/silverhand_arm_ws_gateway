@@ -38,7 +38,7 @@ async def recv_until_predicate(
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Smoke-test client for silverhand_arm_ws_gateway mock mode")
+    parser = argparse.ArgumentParser(description="Smoke-test client for silverhand_ws_gateway mock mode")
     parser.add_argument("--url", default="ws://127.0.0.1:8765")
     parser.add_argument("--domain", choices=("arm", "rover"), default="arm")
     args = parser.parse_args()

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>silverhand_arm_ws_gateway</name>
+  <name>silverhand_ws_gateway</name>
   <version>0.1.0</version>
   <description>WebSocket gateway for SilverHand robot domains.</description>
   <maintainer email="r@localhost">r</maintainer>
@@ -13,7 +13,6 @@
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>launch</exec_depend>
-  <exec_depend>launch_ros</exec_depend>
   <exec_depend>moveit_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>python3-websockets</exec_depend>
