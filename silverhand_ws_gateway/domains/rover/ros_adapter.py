@@ -46,6 +46,8 @@ class RoverRosAdapter(RobotAdapter):
         self._estop_active = False
         self._headlights_enabled = False
         self._last_command_monotonic = time.monotonic()
+        self._last_cmd_vel_publish_monotonic = 0.0
+        self._last_emit_monotonic_by_type: dict[str, float] = {}
         self._odometer_km = 0.0
         self._last_xy: tuple[float, float] | None = None
         self._roll_deg = 0.0
@@ -147,6 +149,11 @@ class RoverRosAdapter(RobotAdapter):
 
         linear_value = payload.get("linear_m_s", payload.get("linear", payload.get("x", 0.0)))
         angular_value = payload.get("angular_rad_s", payload.get("angular", payload.get("z", 0.0)))
+        now = time.monotonic()
+
+        self._input_source = normalize_input_source(payload, default=self._input_source)
+        if not self._should_publish_cmd_vel(now):
+            return
 
         twist = TwistStamped()
         twist.header.stamp = self._node.get_clock().now().to_msg()
@@ -155,8 +162,8 @@ class RoverRosAdapter(RobotAdapter):
         twist.twist.angular.z = float(angular_value)
         self._cmd_vel_publisher.publish(twist)
 
-        self._input_source = normalize_input_source(payload, default=self._input_source)
-        self._last_command_monotonic = time.monotonic()
+        self._last_cmd_vel_publish_monotonic = now
+        self._last_command_monotonic = now
         await self._publish_rover_state()
 
     async def _handle_stop(self) -> None:
@@ -223,6 +230,8 @@ class RoverRosAdapter(RobotAdapter):
             rclpy.spin_once(self._node, timeout_sec=0.1)
 
     def _on_odometry(self, message: Odometry) -> None:
+        if not self._should_emit_message("odometry"):
+            return
         orientation = message.pose.pose.orientation
         heading_deg = _yaw_from_quaternion_deg(orientation.x, orientation.y, orientation.z, orientation.w)
         x_m = float(message.pose.pose.position.x)
@@ -261,6 +270,8 @@ class RoverRosAdapter(RobotAdapter):
         self._pitch_deg = pitch_deg
 
     def _on_battery_state(self, message: BatteryState) -> None:
+        if not self._should_emit_message("battery_state"):
+            return
         percent = float(message.percentage * 100.0) if math.isfinite(message.percentage) and message.percentage >= 0.0 else 0.0
         self._emit_from_thread(
             make_message(
@@ -282,6 +293,8 @@ class RoverRosAdapter(RobotAdapter):
         self._cmd_vel_publisher.publish(twist)
 
     async def _publish_rover_state(self) -> None:
+        if not self._should_emit_message("rover_state"):
+            return
         await self._emit(
             make_rover_state(
                 mode=self._drive_mode,
@@ -313,6 +326,25 @@ class RoverRosAdapter(RobotAdapter):
             return
         future = asyncio.run_coroutine_threadsafe(self._event_sink(message), self._loop)
         future.add_done_callback(_log_threadsafe_future)
+
+    def _should_publish_cmd_vel(self, now: float) -> bool:
+        max_hz = max(float(self._config.rover_cmd_vel_max_hz), 0.0)
+        if max_hz <= 0.0:
+            return True
+        min_period_s = 1.0 / max_hz
+        return (now - self._last_cmd_vel_publish_monotonic) >= min_period_s
+
+    def _should_emit_message(self, message_type: str) -> bool:
+        max_hz = max(float(self._config.rover_telemetry_max_hz), 0.0)
+        if max_hz <= 0.0:
+            return True
+        now = time.monotonic()
+        last_emit = self._last_emit_monotonic_by_type.get(message_type, 0.0)
+        min_period_s = 1.0 / max_hz
+        if (now - last_emit) < min_period_s:
+            return False
+        self._last_emit_monotonic_by_type[message_type] = now
+        return True
 
     async def _await_rclpy_future(self, future: Any) -> Any:
         loop = asyncio.get_running_loop()

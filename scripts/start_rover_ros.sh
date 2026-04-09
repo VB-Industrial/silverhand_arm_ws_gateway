@@ -23,4 +23,6 @@ exec "${INSTALL_PREFIX}/lib/silverhand_ws_gateway/gateway" \
   --rover-odom-topic "${SILVERHAND_ROVER_ODOM_TOPIC:-/rover_base_controller/odom}" \
   --rover-battery-topic "${SILVERHAND_ROVER_BATTERY_TOPIC:-/battery_state}" \
   --rover-headlights-service "${SILVERHAND_ROVER_HEADLIGHTS_SERVICE:-/power_board/set_headlights}" \
+  --rover-cmd-vel-max-hz "${SILVERHAND_ROVER_CMD_VEL_MAX_HZ:-20}" \
+  --rover-telemetry-max-hz "${SILVERHAND_ROVER_TELEMETRY_MAX_HZ:-20}" \
   --log-level "${SILVERHAND_WS_LOG_LEVEL:-INFO}"

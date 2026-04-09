@@ -25,6 +25,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rover-imu-topic", default="/imu_sensor_broadcaster/imu")
     parser.add_argument("--rover-battery-topic", default="/battery_state")
     parser.add_argument("--rover-headlights-service", default="/power_board/set_headlights")
+    parser.add_argument("--rover-cmd-vel-max-hz", type=float, default=20.0)
+    parser.add_argument("--rover-telemetry-max-hz", type=float, default=20.0)
     parser.add_argument("--log-level", default="INFO")
     return parser
 
@@ -48,6 +50,8 @@ def main() -> None:
         rover_imu_topic=args.rover_imu_topic,
         rover_battery_topic=args.rover_battery_topic,
         rover_headlights_service=args.rover_headlights_service,
+        rover_cmd_vel_max_hz=args.rover_cmd_vel_max_hz,
+        rover_telemetry_max_hz=args.rover_telemetry_max_hz,
     )
 
     try:

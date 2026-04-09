@@ -17,3 +17,5 @@ class GatewayConfig:
     rover_imu_topic: str = "/imu_sensor_broadcaster/imu"
     rover_battery_topic: str = "/battery_state"
     rover_headlights_service: str = "/power_board/set_headlights"
+    rover_cmd_vel_max_hz: float = 20.0
+    rover_telemetry_max_hz: float = 20.0
