@@ -118,9 +118,10 @@ class RoverRosAdapter(RobotAdapter):
     async def handle_message(self, message: dict[str, Any]) -> None:
         message_type = message.get("type")
         payload = as_dict(message.get("payload", {}), field_name="payload")
+        legacy_payload = message if isinstance(message, dict) else {}
 
         if message_type == "cmd_vel":
-            await self._handle_cmd_vel(payload)
+            await self._handle_cmd_vel(payload or legacy_payload)
             return
         if message_type == "stop":
             await self._handle_stop()
@@ -144,11 +145,14 @@ class RoverRosAdapter(RobotAdapter):
             await self._publish_rover_state()
             return
 
+        linear_value = payload.get("linear_m_s", payload.get("linear", payload.get("x", 0.0)))
+        angular_value = payload.get("angular_rad_s", payload.get("angular", payload.get("z", 0.0)))
+
         twist = TwistStamped()
         twist.header.stamp = self._node.get_clock().now().to_msg()
         twist.header.frame_id = str(payload.get("frame_id", "base_link"))
-        twist.twist.linear.x = float(payload.get("linear_m_s", 0.0))
-        twist.twist.angular.z = float(payload.get("angular_rad_s", 0.0))
+        twist.twist.linear.x = float(linear_value)
+        twist.twist.angular.z = float(angular_value)
         self._cmd_vel_publisher.publish(twist)
 
         self._input_source = normalize_input_source(payload, default=self._input_source)
