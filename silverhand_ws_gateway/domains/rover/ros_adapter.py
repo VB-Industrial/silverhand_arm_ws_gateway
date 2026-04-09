@@ -9,7 +9,7 @@ import time
 from typing import Any
 
 import rclpy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from rclpy.client import Client
 from rclpy.node import Node
@@ -60,7 +60,7 @@ class RoverRosAdapter(RobotAdapter):
             self._rclpy_owned = True
 
         self._node = rclpy.create_node("silverhand_ws_gateway_rover")
-        self._cmd_vel_publisher = self._node.create_publisher(Twist, self._config.rover_cmd_vel_topic, 10)
+        self._cmd_vel_publisher = self._node.create_publisher(TwistStamped, self._config.rover_cmd_vel_topic, 10)
         self._node.create_subscription(Odometry, self._config.rover_odom_topic, self._on_odometry, 10)
         self._node.create_subscription(Imu, self._config.rover_imu_topic, self._on_imu, 10)
         self._node.create_subscription(BatteryState, self._config.rover_battery_topic, self._on_battery_state, 10)
@@ -144,9 +144,11 @@ class RoverRosAdapter(RobotAdapter):
             await self._publish_rover_state()
             return
 
-        twist = Twist()
-        twist.linear.x = float(payload.get("linear_m_s", 0.0))
-        twist.angular.z = float(payload.get("angular_rad_s", 0.0))
+        twist = TwistStamped()
+        twist.header.stamp = self._node.get_clock().now().to_msg()
+        twist.header.frame_id = str(payload.get("frame_id", "base_link"))
+        twist.twist.linear.x = float(payload.get("linear_m_s", 0.0))
+        twist.twist.angular.z = float(payload.get("angular_rad_s", 0.0))
         self._cmd_vel_publisher.publish(twist)
 
         self._input_source = normalize_input_source(payload, default=self._input_source)
@@ -270,7 +272,9 @@ class RoverRosAdapter(RobotAdapter):
     def _publish_zero_twist(self) -> None:
         if self._cmd_vel_publisher is None:
             return
-        twist = Twist()
+        twist = TwistStamped()
+        twist.header.stamp = self._node.get_clock().now().to_msg()
+        twist.header.frame_id = "base_link"
         self._cmd_vel_publisher.publish(twist)
 
     async def _publish_rover_state(self) -> None:
