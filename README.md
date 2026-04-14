@@ -1,6 +1,6 @@
 # silverhand_ws_gateway
 
-Robot-side websocket gateway for SilverHand domains.
+Шлюз websocket на стороне робота для доменов SilverHand.
 
 Поддерживаемые режимы:
 
@@ -22,7 +22,7 @@ sudo apt-get install -y python3-websockets
 ## Сборка
 
 ```bash
-cd /home/r/silver_ws
+cd ~/silver_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select silverhand_ws_gateway
 source install/setup.bash
@@ -31,7 +31,7 @@ source install/setup.bash
 ## Основные скрипты запуска
 
 ```bash
-cd /home/r/silver_ws/src/silverhand_ws_gateway
+cd ~/silver_ws/src/silverhand_ws_gateway
 ./scripts/start_arm_mock.sh
 ./scripts/start_arm_ros.sh
 ./scripts/start_arm_moveit.sh
@@ -55,44 +55,44 @@ cd /home/r/silver_ws/src/silverhand_ws_gateway
 - `SILVERHAND_ROVER_BATTERY_TOPIC`
 - `SILVERHAND_ROVER_HEADLIGHTS_SERVICE`
 
-## Launch-файлы
+## Файлы запуска
 
-- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_mock.launch.py`
-- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_ros.launch.py`
-- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_moveit.launch.py`
-- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/rover_mock.launch.py`
-- `/home/r/silver_ws/src/silverhand_ws_gateway/launch/rover_ros.launch.py`
+- `launch/arm_mock.launch.py`
+- `launch/arm_ros.launch.py`
+- `launch/arm_moveit.launch.py`
+- `launch/rover_mock.launch.py`
+- `launch/rover_ros.launch.py`
 
 Если нужен запуск именно через `ros2 launch`, сначала добавьте локальный prefix gateway в окружение:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-source /home/r/silver_ws/install/setup.bash
-export AMENT_PREFIX_PATH=/home/r/silver_ws/install/silverhand_ws_gateway:$AMENT_PREFIX_PATH
+source ~/silver_ws/install/setup.bash
+export AMENT_PREFIX_PATH=~/silver_ws/install/silverhand_ws_gateway:$AMENT_PREFIX_PATH
 ```
 
-## Smoke test
+## Smoke-проверка
 
 Arm mock:
 
 ```bash
-cd /home/r/silver_ws/src/silverhand_ws_gateway
+cd ~/silver_ws/src/silverhand_ws_gateway
 python3 scripts/mock_smoke_test.py --domain arm --url ws://127.0.0.1:8765
 ```
 
 Rover mock:
 
 ```bash
-cd /home/r/silver_ws/src/silverhand_ws_gateway
+cd ~/silver_ws/src/silverhand_ws_gateway
 python3 scripts/mock_smoke_test.py --domain rover --url ws://127.0.0.1:8766
 ```
 
 ## Типовой запуск arm + MoveIt
 
-На robot machine:
+На роботе:
 
 ```bash
-cd /home/r/silver_ws
+cd ~/silver_ws
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch silverhand_system_bringup silverhand_system_arm_hand_moveit.launch.py use_mock_hardware:=true use_rviz:=false
@@ -101,11 +101,11 @@ ros2 launch silverhand_system_bringup silverhand_system_arm_hand_moveit.launch.p
 Во втором терминале:
 
 ```bash
-cd /home/r/silver_ws
+cd ~/silver_ws
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-export AMENT_PREFIX_PATH=/home/r/silver_ws/install/silverhand_ws_gateway:$AMENT_PREFIX_PATH
-ros2 launch /home/r/silver_ws/src/silverhand_ws_gateway/launch/arm_moveit.launch.py
+export AMENT_PREFIX_PATH=~/silver_ws/install/silverhand_ws_gateway:$AMENT_PREFIX_PATH
+ros2 launch silverhand_ws_gateway arm_moveit.launch.py
 ```
 
 GUI:
@@ -136,18 +136,18 @@ ros2 action list | grep move_action
 
 ## systemd
 
-System service template:
+Шаблон systemd-сервиса:
 
 - `systemd/system/silverhand-ws-gateway@.service`
 
 Установка:
 
 ```bash
-sudo install -Dm644 /home/r/silver_ws/src/silverhand_ws_gateway/systemd/system/silverhand-ws-gateway@.service /etc/systemd/system/silverhand-ws-gateway@.service
+sudo install -Dm644 systemd/system/silverhand-ws-gateway@.service /etc/systemd/system/silverhand-ws-gateway@.service
 sudo systemctl daemon-reload
 ```
 
-Инстансы:
+Экземпляры:
 
 ```bash
 sudo systemctl enable --now silverhand-ws-gateway@arm_mock.service
@@ -157,7 +157,7 @@ sudo systemctl enable --now silverhand-ws-gateway@rover_mock.service
 sudo systemctl enable --now silverhand-ws-gateway@rover_ros.service
 ```
 
-Логи и статус:
+Статус и логи:
 
 ```bash
 systemctl status silverhand-ws-gateway@arm_moveit.service
